@@ -135,6 +135,8 @@ class YamahaReceiver:
         )
 
     def get_status(self):
+        """Parses the results of Basic Status"""
+
         xml_response = self.get_basic_status()
         if not xml_response:
             return None
@@ -180,6 +182,8 @@ class YamahaReceiver:
 
     # --- CUSTOM ---
     def safe_turn_on(self):
+        """Ensures that the amp is below safety level when turned on."""
+
         self.set_power("On")
         volume = self.get_volume()
         s_level = self.safety_level / 10
