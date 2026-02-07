@@ -1,12 +1,16 @@
 import requests
 import xml.etree.ElementTree as ET
+import time
 
 
 class YamahaReceiver:
-    def __init__(self, ip, zone="Main_Zone"):
+    def __init__(self, ip, zone="Main_Zone", safety_level=-30):
         self.ip = ip
         self.zone = zone
         self.url = f"http://{self.ip}/YamahaRemoteControl/ctrl"
+        self.safety_level = (
+            safety_level * 10
+        )  # Convert safety in db to safety in yamaha units
         self.session = requests.Session()
         self.session.headers.update(
             {
@@ -59,7 +63,7 @@ class YamahaReceiver:
         # Yamaha integer conversion
         yamaha_val = int(db_level * 10)
         if safety:
-            yamaha_val = min(yamaha_val, -300)  # Max safety limit -30dB
+            yamaha_val = min(yamaha_val, self.safety_level)
 
         xml = (
             f"<Volume><Lvl><Val>{yamaha_val}</Val>"
@@ -71,6 +75,7 @@ class YamahaReceiver:
         current = self.get_volume()
         if current is not None:
             self.set_volume(current + increment, safety)
+        return current + increment
 
     def set_mute(self, enable=True):  # Options: On, Off
         state = "On" if enable else "Off"
@@ -172,3 +177,15 @@ class YamahaReceiver:
             },
         }
         return status
+
+    # --- CUSTOM ---
+    def safe_turn_on(self):
+        self.set_power("On")
+        volume = self.get_volume()
+        s_level = self.safety_level / 10
+        while volume > s_level:
+            self.set_volume(s_level)
+            volume = self.get_volume()
+            time.sleep(0.1)
+
+        return min(volume, self.safety_level)
