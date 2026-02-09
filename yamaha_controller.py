@@ -1,6 +1,7 @@
 import requests
 import xml.etree.ElementTree as ET
 import time
+from math import floor
 
 
 class YamahaReceiver:
@@ -71,8 +72,10 @@ class YamahaReceiver:
         )
         return self._send_command(xml)
 
-    def adjust_volume(self, increment, safety=True):
+    def adjust_volume(self, increment, _round=False, safety=True):
         current = self.get_volume()
+        if _round:
+            current = floor(current / increment) * increment
         if current is not None:
             self.set_volume(current + increment, safety)
         return current + increment
